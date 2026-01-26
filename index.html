@@ -1098,6 +1098,9 @@
         let currentHouseId = null;
 
         renderHouses();
+        renderEventTypes();
+renderStatuses();
+renderStatusViewsMenu();
         let currentTypeFilter = '';
 
         function filterEventsByType() {
@@ -1116,9 +1119,6 @@
             });
             if (currentTypeFilter) select.value = currentTypeFilter;
         }
-        renderEventTypes();
-        renderStatuses();
-        renderStatusViewsMenu();
 
         // ===== MENÜ KEZELÉS =====
 

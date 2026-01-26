@@ -1098,6 +1098,24 @@
         let currentHouseId = null;
 
         renderHouses();
+        let currentTypeFilter = '';
+
+        function filterEventsByType() {
+            currentTypeFilter = document.getElementById('eventTypeFilter').value;
+            renderEvents();
+        }
+
+        function populateEventTypeFilter() {
+            const select = document.getElementById('eventTypeFilter');
+            select.innerHTML = '<option value="">🔍 Összes típus</option>';
+            eventTypes.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type.name;
+                option.textContent = type.name;
+                select.appendChild(option);
+            });
+            if (currentTypeFilter) select.value = currentTypeFilter;
+        }
         renderEventTypes();
         renderStatuses();
         renderStatusViewsMenu();
@@ -1179,6 +1197,7 @@
             document.getElementById('eventsPage').classList.add('active');
             document.getElementById('statusViewPage').classList.remove('active');
             renderEvents();
+            populateEventTypeFilter();
         }
 
         function showStatusView(statusName) {
@@ -1481,7 +1500,12 @@
 
         function renderEvents() {
             const container = document.getElementById('eventsList');
-            const houseEvents = events.filter(e => e.houseId === currentHouseId);
+            let houseEvents = events.filter(e => e.houseId === currentHouseId);
+            
+            // Szűrés típus szerint
+            if (currentTypeFilter) {
+                houseEvents = houseEvents.filter(e => e.type === currentTypeFilter);
+            }
             if (houseEvents.length === 0) {
                 container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><p>Eseménynapló</p></div>`;
                 return;

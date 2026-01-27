@@ -1102,6 +1102,15 @@
 renderStatuses();
 renderStatusViewsMenu();
         let currentTypeFilter = '';
+        function getStatusGradient(statusName) {
+            const gradients = {
+                'Feladat': 'linear-gradient(135deg, #8B7355 0%, #B8956B 50%, #8B7355 100%)',
+                'Folyamatban': 'linear-gradient(135deg, #C0C0C0 0%, #E8E8E8 50%, #C0C0C0 100%)',
+                'Ütemezett': 'linear-gradient(135deg, #B8860B 0%, #DAA520 50%, #B8860B 100%)',
+                'Lezárva': 'linear-gradient(135deg, #2C3E50 0%, #34495E 50%, #2C3E50 100%)'
+            };
+            return gradients[statusName] || 'linear-gradient(135deg, #95a5a6 0%, #bdc3c7 100%)';
+        }
 
         function filterEventsByType() {
             currentTypeFilter = document.getElementById('eventTypeFilter').value;
@@ -1516,7 +1525,7 @@ renderStatusViewsMenu();
                 const statusEvents = houseEvents.filter(e => e.status === status.name && !e.parentId);
                 if (statusEvents.length === 0) return;
                 statusEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
-                html += `<div class="status-section"><h3 style="background-color: ${status.color}20; border-left: 5px solid ${status.color};"><span style="color: ${status.color};">●</span> ${status.name.toUpperCase()} (${statusEvents.length})</h3>`;
+                html += `<div class="status-section"><h3 style="background: ${getStatusGradient(status.name)}; color: white; border-left: 5px solid ${status.color};"><span>●</span> ${status.name.toUpperCase()} (${statusEvents.length})</h3>`;
                 statusEvents.forEach(parent => {
                     const children = houseEvents.filter(e => e.parentId === parent.id).sort((a, b) => new Date(a.date) - new Date(b.date));
                     const hasChildren = children.length > 0;

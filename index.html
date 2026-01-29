@@ -2059,61 +2059,64 @@
         }
 
         document.getElementById('eventForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const eventId = document.getElementById('eventId').value || Date.now().toString();
-            const existingIndex = events.findIndex(e => e.id === eventId);
-            
-            // Meglévő adatok lekérdezése (ha szerkesztés)
-            const existingEvent = existingIndex >= 0 ? events[existingIndex] : null;
-            const existingImages = existingEvent?.images || [];
-            
-            // Képek feltöltése ha vannak ÚJAK
-            let newImageUrls = [];
-            if (selectedImages.length > 0) {
-                const uploadBtn = this.querySelector('button[type="submit"]');
-                uploadBtn.disabled = true;
-                uploadBtn.textContent = 'Képek feltöltése...';
-                
-                newImageUrls = await uploadImages(eventId);
-                
-                uploadBtn.disabled = false;
-                uploadBtn.textContent = 'Mentés';
-            }
-            
-            // ÖSSZES kép = régi + új
-            const allImages = [...existingImages, ...newImageUrls];
-            
-            const eventData = {
-                id: eventId,
-                houseId: currentHouseId,
-                parentId: document.getElementById('parentId').value || null,
-                date: document.getElementById('eventDate').value,
-                status: document.getElementById('eventStatus').value,
-                closedDate: document.getElementById('eventClosedDate').value || null,
-                type: document.getElementById('eventType').value,
-                description: document.getElementById('eventDescription').value,
-                reporter: document.getElementById('eventReporter').value,
-                images: allImages,
-                createdAt: existingEvent?.createdAt || Date.now()
-            };
-            
-            if (existingIndex >= 0) {
-                events[existingIndex] = eventData;
-            } else {
-                events.push(eventData);
-            }
-            
-            localStorage.setItem('tarsashaz_events', JSON.stringify(events));
-            renderEvents();
-            renderHouses();
-            
-            // Képek törlése a formból
-            selectedImages = [];
-            document.getElementById('imagePreviewContainer').innerHTML = '';
-            document.getElementById('eventImages').value = '';
-            
-            closeModal('eventModal');
+                e.preventDefault();
+    
+    const eventId = document.getElementById('eventId').value || Date.now().toString();
+    const existingIndex = events.findIndex(e => e.id === eventId);
+    
+    // 1. ELMENTJÜK A RÉGI KÉPEKET, HOGY NE TŰNJENEK EL
+    const existingEvent = existingIndex >= 0 ? events[existingIndex] : null;
+    const existingImages = (existingEvent && existingEvent.images) ? existingEvent.images : [];
+    
+    let newImageUrls = [];
+    if (selectedImages.length > 0) {
+        const uploadBtn = this.querySelector('button[type="submit"]');
+        const originalText = uploadBtn.textContent;
+        uploadBtn.disabled = true;
+        uploadBtn.textContent = 'Képek feltöltése...';
+        
+        try {
+            newImageUrls = await uploadImages(eventId);
+        } catch (error) {
+            console.error("Hiba:", error);
+            alert("Nem sikerült a képek feltöltése.");
+        }
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = originalText;
+    }
+
+    // 2. ÖSSZEFÉSÜLJÜK: Régi képek + Új képek
+    const allImages = [...existingImages, ...newImageUrls];
+
+    const eventData = {
+        id: eventId,
+        houseId: currentHouseId,
+        parentId: document.getElementById('parentId').value || null,
+        date: document.getElementById('eventDate').value,
+        status: document.getElementById('eventStatus').value,
+        closedDate: document.getElementById('eventClosedDate').value || null,
+        type: document.getElementById('eventType').value,
+        description: document.getElementById('eventDescription').value,
+        reporter: document.getElementById('eventReporter').value,
+        images: allImages, // EZ A SOR JAVÍTJA A HIBÁT
+        createdAt: existingEvent ? existingEvent.createdAt : Date.now()
+    };
+
+    if (existingIndex >= 0) {
+        events[existingIndex] = eventData;
+    } else {
+        events.push(eventData);
+    }
+
+    await saveToFirestore(); // Frissítettük a mentés hívását is
+    renderEvents();
+    renderHouses();
+    
+    // 3. TAKARÍTÁS: Ürítjük a kiválasztott képeket a következőhöz
+    selectedImages = [];
+    document.getElementById('imagePreviewContainer').innerHTML = '';
+    closeModal('eventModal');
+
         });
 
         function editEvent(eventId) {

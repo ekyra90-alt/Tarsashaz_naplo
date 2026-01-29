@@ -1291,14 +1291,9 @@
 
         // ===== AUTH FUNCTIONS =====
         function signInWithGoogle() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithRedirect(provider);
-        }
-
-        function signOut() {
-            if (confirm('Biztosan kijelentkezel?')) {
-                auth.signOut();
-            }
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' }); // <--- Ezt add hozzá!
+    auth.signInWithRedirect(provider);
         }
 
         // Handle redirect result on page load

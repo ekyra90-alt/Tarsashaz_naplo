@@ -1097,6 +1097,12 @@
                 <span>Import</span>
             </div>
         </div>
+        <div class="user-info hidden" id="userInfo">
+    <img class="user-avatar" id="userAvatar" src="" alt="">
+    <span id="userName"></span>
+    <button class="logout-btn" onclick="signOut()">Kilépés</button>
+        </div>
+        
     </div>
 
     <input type="file" id="jsonImportFile" accept=".json" style="display: none;" onchange="importFromJSON(event)">

@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Elite Notes - Luxus Jegyzetfüzet</title>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Montserrat:wght@300;400;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(212, 175, 55, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(184, 134, 11, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 30px;
+            padding: 30px;
+            position: relative;
+            z-index: 1;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.3),
+                0 0 1px rgba(212, 175, 55, 0.5);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 42px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #d4af37 0%, #f4e5c3 50%, #8b6914 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #666;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        /* Auto-save indicator */
+        .save-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 1000;
+            transition: all 0.3s;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .save-indicator.show {
+            opacity: 1;
+        }
+
+        .save-indicator.saving {
+            background: linear-gradient(135deg, #d4af37 0%, #f4e5c3 100%);
+            color: #2c2416;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .save-indicator.saving::before {
+            content: '⟳';
+            animation: spin 1s linear infinite;
+        }
+
+        /* Notebooks grid */
+        .notebooks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .notebook-card {
+            background: white;
+            border: 3px solid #d4af37;
+            border-radius: 20px;
+            padding: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            position: relative;
+            box-shadow: 
+                0 4px 15px rgba(0, 0, 0, 0.08),
+                0 0 1px rgba(212, 175, 55, 0.3);
+        }
+
+        .notebook-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 
+                0 12px 30px rgba(212, 175, 55, 0.25),
+                0 0 1px rgba(192, 192, 192, 0.4);
+            border-color: #c0c0c0;
+        }
+
+        .notebook-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .notebook-name {
+            font-weight: 700;
+            font-size: 18px;
+            color: #2c2416;
+            margin-bottom: 8px;
+        }
+
+        .notebook-count {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .notebook-card.add-new {
+            border-style: dashed;
+            opacity: 0.7;
+        }
+
+        .notebook-card.add-new:hover {
+            opacity: 1;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.05) 0%, rgba(192, 192, 192, 0.05) 100%);
+        }
+
+        /* Notes list */
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .note-item {
+            background: white;
+            border: 2px solid #d4af37;
+            border-radius: 15px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .note-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
+        }
+
+        .note-content {
+            flex: 1;
+        }
+
+        .note-title {
+            font-weight: 700;
+            font-size: 16px;
+            color: #2c2416;
+            margin-bottom: 5px;
+        }
+
+        .note-preview {
+            font-size: 13px;
+            color: #666;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .note-date {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .note-type-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 15px;
+        }
+
+        .note-type-badge.text {
+            background: linear-gradient(135deg, #d4af37 0%, #f4e5c3 100%);
+            color: #2c2416;
+        }
+
+        .note-type-badge.drawing {
+            background: linear-gradient(135deg, #c0c0c0 0%, #e8e8e8 100%);
+            color: #2c2416;
+        }
+
+        /* Editor */
+        .editor-container {
+            margin-top: 30px;
+        }
+
+        .editor-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .editor-tab {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #d4af37;
+            border-radius: 15px;
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .editor-tab.active {
+            background: linear-gradient(135deg, #d4af37 0%, #f4e5c3 100%);
+            color: #2c2416;
+            border-color: #8b6914;
+        }
+
+        .editor-content {
+            display: none;
+        }
+
+        .editor-content.active {
+            display: block;
+        }
+
+        /* Text editor */
+        .note-title-input {
+            width: 100%;
+            font-size: 22px;
+            font-weight: 700;
+            border: none;
+            border-bottom: 2px solid #d4af37;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-family: 'Montserrat', sans-serif;
+            background: transparent;
+        }
+
+        .note-title-input:focus {
+            outline: none;
+            border-bottom-color: #c0c0c0;
+        }
+
+        .note-text-input {
+            width: 100%;
+            min-height: 400px;
+            border: 2px solid #d4af37;
+            border-radius: 15px;
+            padding: 20px;
+            font-size: 16px;
+            font-family: 'Montserrat', sans-serif;
+            line-height: 1.6;
+            resize: vertical;
+        }
+
+        .note-text-input:focus {
+            outline: none;
+            border-color: #c0c0c0;
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+        }
+
+        /* Drawing canvas */
+        .drawing-tools {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            flex-wrap: wrap;
+        }
+
+        .tool-btn {
+            padding: 10px 20px;
+            border: 2px solid #d4af37;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tool-btn.active {
+            background: linear-gradient(135deg, #d4af37 0%, #f4e5c3 100%);
+            color: #2c2416;
+        }
+
+        .color-picker {
+            width: 50px;
+            height: 40px;
+            border: 2px solid #d4af37;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .stroke-width {
+            padding: 10px 15px;
+            border: 2px solid #d4af37;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        #drawingCanvas {
+            width: 100%;
+            height: 500px;
+            border: 2px solid #d4af37;
+            border-radius: 15px;
+            background: white;
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, #d4af37 0%, #f4e5c3 50%, #8b6914 100%);
+            color: #2c2416;
+            border: none;
+            padding: 14px 30px;
+            border-radius: 25px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
+            transition: all 0.3s;
+            font-family: 'Montserrat', sans-serif;
+            min-width: 120px;
+            min-height: 48px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(212, 175, 55, 0.5);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #2c2416;
+            border: 2px solid #d4af37;
+            padding: 12px 28px;
+            border-radius: 25px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Montserrat', sans-serif;
+            min-width: 120px;
+            min-height: 48px;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1) 0%, rgba(192, 192, 192, 0.1) 100%);
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 25px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Montserrat', sans-serif;
+            min-width: 120px;
+            min-height: 48px;
+        }
+
+        .btn-delete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .back-btn {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 25px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Montserrat', sans-serif;
+            margin-bottom: 20px;
+            min-height: 48px;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(44, 62, 80, 0.3);
+        }
+
+        /* Pages */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+                border-radius: 20px;
+            }
+
+            h1 {
+                font-size: 32px;
+            }
+
+            .notebooks-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn-primary,
+            .btn-secondary,
+            .btn-delete {
+                width: 100%;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="save-indicator" id="saveIndicator">
+        <span id="saveText">Mentve</span>
+    </div>
+
+    <div class="container">
+        <!-- Main Page - Notebooks -->
+        <div id="notebooksPage" class="page active">
+            <div class="header">
+                <h1>ELITE NOTES</h1>
+                <p class="subtitle">Luxury Digital Notebook</p>
+            </div>
+
+            <div class="notebooks-grid" id="notebooksList">
+                <!-- Notebooks will be rendered here -->
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn-primary" onclick="openNewNotebookModal()">
+                    + Új Füzet
+                </button>
+            </div>
+        </div>
+
+        <!-- Notes Page -->
+        <div id="notesPage" class="page">
+            <button class="back-btn" onclick="showNotebooksPage()">← Vissza a füzetekhez</button>
+            
+            <h2 id="currentNotebookName" style="margin-bottom: 30px; font-family: 'Playfair Display', serif; font-size: 32px; color: #2c2416;"></h2>
+
+            <div class="notes-list" id="notesList">
+                <!-- Notes will be rendered here -->
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn-primary" onclick="openNewNoteModal()">
+                    + Új Jegyzet
+                </button>
+                <button class="btn-delete" onclick="deleteNotebook()">
+                    🗑️ Füzet törlése
+                </button>
+            </div>
+        </div>
+
+        <!-- Note Editor Page -->
+        <div id="editorPage" class="page">
+            <button class="back-btn" onclick="backToNotes()">← Vissza a jegyzetekhez</button>
+
+            <div class="editor-tabs">
+                <div class="editor-tab active" data-type="text" onclick="switchEditorTab('text')">
+                    ⌨️ Gépelés
+                </div>
+                <div class="editor-tab" data-type="drawing" onclick="switchEditorTab('drawing')">
+                    🖊️ Kézírás
+                </div>
+            </div>
+
+            <!-- Text Editor -->
+            <div class="editor-content active" id="textEditor">
+                <input type="text" class="note-title-input" id="noteTitle" placeholder="Jegyzet címe..." onkeyup="autoSaveNote()">
+                <textarea class="note-text-input" id="noteText" placeholder="Kezdj el gépelni..." onkeyup="autoSaveNote()"></textarea>
+            </div>
+
+            <!-- Drawing Editor -->
+            <div class="editor-content" id="drawingEditor">
+                <input type="text" class="note-title-input" id="drawingTitle" placeholder="Rajz címe..." onkeyup="autoSaveNote()">
+                
+                <div class="drawing-tools">
+                    <button class="tool-btn active" data-tool="pen" onclick="selectTool('pen')">🖊️ Toll</button>
+                    <button class="tool-btn" data-tool="eraser" onclick="selectTool('eraser')">🧹 Radír</button>
+                    <input type="color" class="color-picker" id="colorPicker" value="#000000" onchange="changeColor()">
+                    <select class="stroke-width" id="strokeWidth" onchange="changeStrokeWidth()">
+                        <option value="2">Vékony</option>
+                        <option value="4" selected>Normál</option>
+                        <option value="8">Vastag</option>
+                    </select>
+                    <button class="tool-btn" onclick="clearCanvas()">🗑️ Törlés</button>
+                </div>
+
+                <canvas id="drawingCanvas"></canvas>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn-primary" onclick="saveNote()">💾 Mentés</button>
+                <button class="btn-delete" onclick="deleteNote()">🗑️ Törlés</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== APP STATE =====
+        let notebooks = [];
+        let notes = [];
+        let currentNotebookId = null;
+        let currentNoteId = null;
+        let currentEditorType = 'text';
+        let autoSaveTimeout = null;
+
+        // Drawing state
+        let canvas = null;
+        let ctx = null;
+        let isDrawing = false;
+        let currentTool = 'pen';
+        let currentColor = '#000000';
+        let currentStrokeWidth = 4;
+        let lastX = 0;
+        let lastY = 0;
+
+        // ===== INIT =====
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            renderNotebooks();
+        });
+
+        // ===== LOCAL STORAGE =====
+        function loadData() {
+            notebooks = JSON.parse(localStorage.getItem('elite_notes_notebooks')) || [];
+            notes = JSON.parse(localStorage.getItem('elite_notes_notes')) || [];
+        }
+
+        function saveData() {
+            localStorage.setItem('elite_notes_notebooks', JSON.stringify(notebooks));
+            localStorage.setItem('elite_notes_notes', JSON.stringify(notes));
+            showSaveIndicator('💾 Mentve');
+        }
+
+        function showSaveIndicator(text) {
+            const indicator = document.getElementById('saveIndicator');
+            const textEl = document.getElementById('saveText');
+            textEl.textContent = text;
+            indicator.classList.add('show', 'saving');
+            
+            setTimeout(() => {
+                indicator.classList.remove('saving');
+                setTimeout(() => {
+                    indicator.classList.remove('show');
+                }, 1500);
+            }, 500);
+        }
+
+        // ===== NOTEBOOKS =====
+        function renderNotebooks() {
+            const container = document.getElementById('notebooksList');
+            
+            if (notebooks.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📚</div>
+                        <p>Még nincsenek füzeteid</p>
+                        <p style="font-size: 13px; margin-top: 10px;">Hozz létre egy új füzetet az alábbi gomb megnyomásával!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            notebooks.forEach(notebook => {
+                const notebookNotes = notes.filter(n => n.notebookId === notebook.id);
+                html += `
+                    <div class="notebook-card" onclick="openNotebook('${notebook.id}')">
+                        <div class="notebook-icon">${notebook.icon}</div>
+                        <div class="notebook-name">${notebook.name}</div>
+                        <div class="notebook-count">${notebookNotes.length} jegyzet</div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function openNewNotebookModal() {
+            const name = prompt('Füzet 

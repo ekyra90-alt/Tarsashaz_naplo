@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elite Property – Főmenü</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Montserrat:wght@300;400;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(212,175,55,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(184,134,11,0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* LOGIN */
+        #loginScreen {
+            background: rgba(255,255,255,0.97);
+            border-radius: 30px;
+            padding: 60px 50px;
+            text-align: center;
+            box-shadow: 0 30px 90px rgba(0,0,0,0.5), 0 0 1px 1px rgba(212,175,55,0.3);
+            max-width: 450px;
+            width: 100%;
+        }
+
+        #loginScreen h1 {
+            font-family: 'Playfair Display', serif;
+            background: linear-gradient(135deg, #d4af37, #f4e5c3, #d4af37);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2.5em;
+            font-weight: 900;
+            margin-bottom: 10px;
+        }
+
+        #loginScreen p { color: #7f8c8d; margin-bottom: 35px; font-size: 14px; }
+
+        .google-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: white;
+            border: 2px solid #d4af37;
+            border-radius: 50px;
+            padding: 14px 30px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 15px;
+            color: #2c3e50;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .google-btn:hover {
+            background: linear-gradient(135deg, #d4af37, #f4e5c3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(212,175,55,0.4);
+        }
+
+        /* MAIN APP */
+        #mainApp { display: none; width: 100%; max-width: 900px; }
+
+        .hub-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .hub-header h1 {
+            font-family: 'Playfair Display', serif;
+            background: linear-gradient(135deg, #d4af37, #f4e5c3, #d4af37);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 3.5em;
+            font-weight: 900;
+            line-height: 1.1;
+        }
+
+        .hub-header p {
+            color: rgba(212,175,55,0.7);
+            font-size: 14px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-top: 8px;
+        }
+
+        .user-bar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-bottom: 20px;
+            color: rgba(255,255,255,0.7);
+            font-size: 13px;
+        }
+
+        .user-bar img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid #d4af37;
+        }
+
+        .logout-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(212,175,55,0.4);
+            color: rgba(255,255,255,0.8);
+            padding: 7px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-family: 'Montserrat', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover { background: rgba(212,175,55,0.2); }
+
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+        }
+
+        .module-card {
+            background: rgba(255,255,255,0.97);
+            border-radius: 24px;
+            padding: 40px 25px;
+            text-align: center;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3), 0 0 1px rgba(212,175,55,0.3);
+            position: relative;
+            overflow: hidden;
+            display: block;
+        }
+
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #d4af37, #f4e5c3, #d4af37);
+        }
+
+        .module-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 20px rgba(212,175,55,0.2);
+        }
+
+        .module-icon {
+            font-size: 3em;
+            margin-bottom: 18px;
+            display: block;
+        }
+
+        .module-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .module-desc {
+            font-size: 12px;
+            color: #95a5a6;
+            line-height: 1.5;
+        }
+
+        .module-card.primary .module-name { color: #d4af37; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<!-- Bejelentkezés -->
+<div id="loginScreen">
+    <h1>ELITE</h1>
+    <p>Property Management Suite</p>
+    <button class="google-btn" onclick="signInWithGoogle()">
+        <svg width="20" height="20" viewBox="0 0 48 48">
+            <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.1 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.2 2.8l5.7-5.7C33.5 7.1 29 5 24 5 13 5 4 14 4 25s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/>
+            <path fill="#FF3D00" d="M6.3 15.5l6.6 4.8C14.7 16.4 19 13 24 13c2.8 0 5.3 1 7.2 2.8l5.7-5.7C33.5 7.1 29 5 24 5 16.3 5 9.7 9.3 6.3 15.5z"/>
+            <path fill="#4CAF50" d="M24 45c4.9 0 9.4-1.9 12.8-4.9l-5.9-5c-1.8 1.3-4.1 2.1-6.9 2.1-5.3 0-9.8-3.6-11.4-8.5l-6.6 5.1C9.5 40.5 16.2 45 24 45z"/>
+            <path fill="#1565C0" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4.1 5.4l5.9 5c-.4.4 6.9-5 6.9-13.4 0-1.3-.1-2.6-.4-3.9z"/>
+        </svg>
+        Bejelentkezés Google-lel
+    </button>
+</div>
+
+<!-- Főalkalmazás -->
+<div id="mainApp">
+    <div class="user-bar">
+        <img id="userAvatar" src="" alt="">
+        <span id="userName"></span>
+        <button class="logout-btn" onclick="signOut()">Kilépés</button>
+    </div>
+
+    <div class="hub-header">
+        <h1>ELITE PROPERTY</h1>
+        <p>Management Suite</p>
+    </div>
+
+    <div class="modules-grid">
+        <a href="events.html" class="module-card primary">
+            <span class="module-icon">📋</span>
+            <div class="module-name">Eseménynapló</div>
+            <div class="module-desc">Hibabejelentések, munkák, státuszkövetés</div>
+        </a>
+        <a href="contacts.html" class="module-card">
+            <span class="module-icon">📇</span>
+            <div class="module-name">Névjegyek</div>
+            <div class="module-desc">Szolgáltatók, szerelők, partnerek</div>
+        </a>
+        <a href="notes.html" class="module-card">
+            <span class="module-icon">📝</span>
+            <div class="module-name">Jegyzetfüzet</div>
+            <div class="module-desc">Gyorsjegyzetek, teendők, ötletek</div>
+        </a>
+        <a href="documents.html" class="module-card">
+            <span class="module-icon">🗂️</span>
+            <div class="module-name">Dokumentumtár</div>
+            <div class="module-desc">Kötvények, okiratok, szerződések</div>
+        </a>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyDgWexO15icDlEVhRN_JwCTSxzX4y1-o2A",
+        authDomain: "tarsashaz-naplo.vercel.app",
+        projectId: "tarsashaz-naplo",
+        storageBucket: "tarsashaz-naplo.firebasestorage.app",
+        messagingSenderId: "367375211993",
+        appId: "1:367375211993:web:03f31cc62725e227092928"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    auth.getRedirectResult().catch(console.error);
+
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('mainApp').style.display = 'block';
+            document.getElementById('userAvatar').src = user.photoURL || '';
+            document.getElementById('userName').textContent = user.displayName || user.email;
+        } else {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('mainApp').style.display = 'none';
+        }
+    });
+
+    function signInWithGoogle() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        auth.signInWithRedirect(provider);
+    }
+
+    function signOut() {
+        auth.signOut();
+    }
+</script>
+</body>
+</html>

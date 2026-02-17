@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elite Property – Névjegyek</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Montserrat:wght@300;400;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(212,175,55,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(184,134,11,0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.98);
+            border-radius: 30px;
+            padding: 50px;
+            box-shadow: 0 30px 90px rgba(0,0,0,0.5), 0 0 1px 1px rgba(212,175,55,0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, #d4af37, #f4e5c3, #d4af37);
+            border-radius: 30px 30px 0 0;
+        }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: #d4af37;
+            font-size: 14px;
+            font-weight: 700;
+            font-family: 'Montserrat', sans-serif;
+            cursor: pointer;
+            padding: 8px 0;
+            letter-spacing: 0.5px;
+            transition: opacity 0.2s;
+        }
+
+        .back-btn:hover { opacity: 0.7; }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            background: linear-gradient(135deg, #d4af37, #f4e5c3, #d4af37);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2.8em;
+            font-weight: 900;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #95a5a6;
+            font-size: 13px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 35px;
+        }
+
+        /* TOP BAR */
+        .top-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 20px;
+            border: 2px solid #ecf0f1;
+            border-radius: 50px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            color: #2c3e50;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .search-input:focus { border-color: #d4af37; }
+
+        .category-filter {
+            padding: 12px 20px;
+            border: 2px solid #ecf0f1;
+            border-radius: 50px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            color: #2c3e50;
+            outline: none;
+            cursor: pointer;
+            background: white;
+            transition: border-color 0.3s;
+        }
+
+        .category-filter:focus { border-color: #d4af37; }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #d4af37, #f4e5c3, #d4af37);
+            background-size: 200%;
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 50px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            box-shadow: 0 4px 15px rgba(212,175,55,0.3);
+        }
+
+        .btn-primary:hover {
+            background-position: right;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(212,175,55,0.4);
+        }
+
+        /* CONTACTS GRID */
+        .contacts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .contact-card {
+            background: white;
+            border: 2px solid #ecf0f1;
+            border-radius: 20px;
+            padding: 25px;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .contact-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 6px;
+            height: 100%;
+            background: linear-gradient(180deg, #d4af37, #f4e5c3);
+        }
+
+        .contact-card:hover {
+            border-color: #d4af37;
+            box-shadow: 0 8px 30px rgba(212,175,55,0.2);
+            transform: translateY(-3px);
+        }
+
+        .contact-category-badge {
+            display: inline-block;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #d4af37, #f4e5c3);
+            color: #1a1a2e;
+        }
+
+        .contact-name {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 4px;
+        }
+
+        .contact-person {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+
+        .contact-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .contact-info-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: #34495e;
+        }
+
+        .contact-info-row .icon { font-size: 16px; }
+
+        .contact-info-row a {
+            color: #d4af37;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .contact-info-row a:hover { text-decoration: underline; }
+
+        .contact-note {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ecf0f1;
+            font-size: 12px;
+            color: #95a5a6;
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        .contact-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            background: none;
+            border: 1px solid #ecf0f1;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+            color: #7f8c8d;
+            transition: all 0.2s;
+        }
+
+        .btn-icon:hover { border-color: #d4af37; color: #d4af37; }
+
+        .btn-delete { color: #e74c3c; }
+        .btn-delete:hover { border-color: #e74c3c; color: #e74c3c; }
+
+        /* EMPTY STATE */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: #95a5a6;
+        }
+
+        .empty-state-icon { font-size: 4em; margin-bottom: 20px; }
+
+        /* MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.open { display: flex; }
+
+        .modal-content {
+            background: white;
+            border-radius: 25px;
+            padding: 40px;
+            width: 100%;
+            max-width: 520px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #d4af37, #f4e5c3, #d4af37);
+            border-radius: 25px 25px 0 0;
+        }
+
+        .modal-content h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8em;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: #7f8c8d;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 18px;
+            border: 2px solid #ecf0f1;
+            border-radius: 12px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            color: #2c3e50;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus { border-color: #d4af37; }
+
+        .form-group textarea { resize: vertical; min-height: 80px; }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .form-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .btn-cancel {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+            color: white;
+        }
+
+        .btn-cancel:hover { background: linear-gradient(135deg, #7f8c8d, #95a5a6); }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Login screen -->
+    <div id="loginScreen" class="empty-state">
+        <div class="empty-state-icon">🔐</div>
+        <p>A névjegyek megtekintéséhez bejelentkezés szükséges.</p>
+        <br>
+        <button class="btn-primary" onclick="signInWithGoogle()">Bejelentkezés Google-lel</button>
+    </div>
+
+    <!-- Main content -->
+    <div id="mainContent" class="hidden">
+        <div class="page-header">
+            <button class="back-btn" onclick="location.href='hub.html'">← Főmenü</button>
+        </div>
+        <h1>📇 Névjegyek</h1>
+        <p class="subtitle">Szolgáltatói Névjegyrendszer</p>
+
+        <div class="top-bar">
+            <input type="text" class="search-input" id="searchInput" placeholder="🔍 Keresés név, kategória szerint..." oninput="renderContacts()">
+            <select class="category-filter" id="categoryFilter" onchange="renderContacts()">
+                <option value="">Összes kategória</option>
+            </select>
+            <button class="btn-primary" onclick="openModal()">✦ Új névjegy</button>
+        </div>
+
+        <div class="contacts-grid" id="contactsGrid">
+            <div class="empty-state" id="emptyState">
+                <div class="empty-state-icon">📇</div>
+                <p>Még nincs névjegy rögzítve</p>
+                <p style="font-size:13px;margin-top:8px;">Adj hozzá szolgáltatókat az "Új névjegy" gombbal</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal" id="contactModal">
+    <div class="modal-content">
+        <h2 id="modalTitle">Új névjegy</h2>
+        <form id="contactForm" onsubmit="saveContact(event)">
+            <input type="hidden" id="contactId">
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Cégnév / Vállalkozó neve *</label>
+                    <input type="text" id="companyName" placeholder="pl. Kovács Villanyszerelés" required>
+                </div>
+                <div class="form-group">
+                    <label>Kapcsolattartó személy</label>
+                    <input type="text" id="personName" placeholder="pl. Kovács János">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Kategória / Szakma *</label>
+                <input type="text" id="categoryInput" list="categoryList" placeholder="pl. Villanyszerelő, Vízszerelő..." required>
+                <datalist id="categoryList"></datalist>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Telefonszám</label>
+                    <input type="tel" id="phone" placeholder="+36 30 123 4567">
+                </div>
+                <div class="form-group">
+                    <label>E-mail cím</label>
+                    <input type="email" id="email" placeholder="nev@pelda.hu">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Megjegyzés</label>
+                <textarea id="notes" placeholder="pl. Megbízható, gyorsan reagál. Csak hétköznapokon hívható."></textarea>
+            </div>
+
+            <div class="form-buttons">
+                <button type="button" class="btn-primary btn-cancel" onclick="closeModal()">Mégse</button>
+                <button type="submit" class="btn-primary">Mentés</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyDgWexO15icDlEVhRN_JwCTSxzX4y1-o2A",
+        authDomain: "tarsashaz-naplo.vercel.app",
+        projectId: "tarsashaz-naplo",
+        storageBucket: "tarsashaz-naplo.firebasestorage.app",
+        messagingSenderId: "367375211993",
+        appId: "1:367375211993:web:03f31cc62725e227092928"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let contacts = [];
+    let currentUser = null;
+
+    auth.getRedirectResult().catch(console.error);
+
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+            loadContacts();
+        } else {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('mainContent').classList.add('hidden');
+        }
+    });
+
+    function signInWithGoogle() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' });
+        auth.signInWithRedirect(provider);
+    }
+
+    function loadContacts() {
+        db.collection('contacts').orderBy('companyName').onSnapshot(snap => {
+            contacts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            updateCategoryFilter();
+            renderContacts();
+        });
+    }
+
+    function updateCategoryFilter() {
+        const categories = [...new Set(contacts.map(c => c.category).filter(Boolean))].sort();
+        const filter = document.getElementById('categoryFilter');
+        const current = filter.value;
+        filter.innerHTML = '<option value="">Összes kategória</option>' +
+            categories.map(c => `<option value="${c}" ${c === current ? 'selected' : ''}>${c}</option>`).join('');
+
+        // datalist for new entries
+        const dl = document.getElementById('categoryList');
+        dl.innerHTML = categories.map(c => `<option value="${c}">`).join('');
+    }
+
+    function renderContacts() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const catFilter = document.getElementById('categoryFilter').value;
+
+        let filtered = contacts.filter(c => {
+            const matchSearch = !search ||
+                c.companyName?.toLowerCase().includes(search) ||
+                c.personName?.toLowerCase().includes(search) ||
+                c.category?.toLowerCase().includes(search) ||
+                c.notes?.toLowerCase().includes(search);
+            const matchCat = !catFilter || c.category === catFilter;
+            return matchSearch && matchCat;
+        });
+
+        const grid = document.getElementById('contactsGrid');
+        document.getElementById('emptyState').style.display = filtered.length ? 'none' : 'block';
+
+        // Remove old cards
+        Array.from(grid.querySelectorAll('.contact-card')).forEach(el => el.remove());
+
+        filtered.forEach(c => {
+            const card = document.createElement('div');
+            card.className = 'contact-card';
+            card.innerHTML = `
+                <div class="contact-category-badge">${escHtml(c.category || 'Egyéb')}</div>
+                <div class="contact-name">${escHtml(c.companyName)}</div>
+                ${c.personName ? `<div class="contact-person">👤 ${escHtml(c.personName)}</div>` : ''}
+                <div class="contact-info">
+                    ${c.phone ? `<div class="contact-info-row"><span class="icon">📞</span><a href="tel:${escHtml(c.phone)}">${escHtml(c.phone)}</a></div>` : ''}
+                    ${c.email ? `<div class="contact-info-row"><span class="icon">✉️</span><a href="mailto:${escHtml(c.email)}">${escHtml(c.email)}</a></div>` : ''}
+                </div>
+                ${c.notes ? `<div class="contact-note">${escHtml(c.notes)}</div>` : ''}
+                <div class="contact-actions">
+                    <button class="btn-icon" onclick="editContact('${c.id}')">✏️ Szerkesztés</button>
+                    <button class="btn-icon btn-delete" onclick="deleteContact('${c.id}', '${escHtml(c.companyName)}')">🗑️ Törlés</button>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function escHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function openModal(id = null) {
+        document.getElementById('contactForm').reset();
+        document.getElementById('contactId').value = '';
+        document.getElementById('modalTitle').textContent = id ? 'Névjegy szerkesztése' : 'Új névjegy';
+
+        if (id) {
+            const c = contacts.find(x => x.id === id);
+            if (c) {
+                document.getElementById('contactId').value = c.id;
+                document.getElementById('companyName').value = c.companyName || '';
+                document.getElementById('personName').value = c.personName || '';
+                document.getElementById('categoryInput').value = c.category || '';
+                document.getElementById('phone').value = c.phone || '';
+                document.getElementById('email').value = c.email || '';
+                document.getElementById('notes').value = c.notes || '';
+            }
+        }
+
+        document.getElementById('contactModal').classList.add('open');
+    }
+
+    function closeModal() {
+        document.getElementById('contactModal').classList.remove('open');
+    }
+
+    function editContact(id) { openModal(id); }
+
+    async function saveContact(e) {
+        e.preventDefault();
+        const id = document.getElementById('contactId').value;
+        const data = {
+            companyName: document.getElementById('companyName').value.trim(),
+            personName: document.getElementById('personName').value.trim(),
+            category: document.getElementById('categoryInput').value.trim(),
+            phone: document.getElementById('phone').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            notes: document.getElementById('notes').value.trim(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        if (id) {
+            await db.collection('contacts').doc(id).update(data);
+        } else {
+            data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            await db.collection('contacts').add(data);
+        }
+        closeModal();
+    }
+
+    async function deleteContact(id, name) {
+        if (!confirm(`Biztosan törlöd ezt a névjegyet?\n"${name}"`)) return;
+        await db.collection('contacts').doc(id).delete();
+    }
+
+    // Close modal on backdrop click
+    document.getElementById('contactModal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+</script>
+</body>
+</html>
